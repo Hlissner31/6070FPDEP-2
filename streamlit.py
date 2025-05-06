@@ -219,6 +219,8 @@ with st.form("income_form"):
 
     submitted = st.form_submit_button("Predict Income")
 
+submitted = st.form_submit_button("Predict Income")
+
 if submitted:
     # Base input dictionary
     input_dict = {
@@ -276,21 +278,25 @@ if submitted:
     # Transform the LOO columns (without fitting)
     loo_encoded = loo_encoder.transform(full_input[loo_cols])
 
-    # 6. Combine LOO with non-LOO features
+    # 6. Manually name the LOO encoded columns
+    loo_encoded_df = pd.DataFrame(
+        loo_encoded,
+        columns=[f"LOO_{col}" for col in loo_cols],  # Manually name the columns
+        index=full_input.index
+    )
+
+    # 7. Combine LOO with non-LOO features
     final_input = pd.concat([
         full_input[non_loo_cols].reset_index(drop=True),
-        pd.DataFrame(loo_encoded, columns=loo_encoder.get_feature_names_out(), index=full_input.index)
+        loo_encoded_df.reset_index(drop=True)
     ], axis=1)
 
-    st.write("Final input shape:", final_input.shape)
-    st.write("Final input columns:", final_input.columns.tolist())
-
-    # 7. Predict income
+    # 8. Predict income
     predicted_income = model.predict(final_input)[0]
     lower = predicted_income - average_mae
     upper = predicted_income + average_mae
 
-    # 8. Display
+    # 9. Display
     st.subheader("Estimated Annual Income")
     st.success(f"${predicted_income:,.0f} (±${average_mae:,.0f})")
     st.write(f"**Range:** ${lower:,.0f} - ${upper:,.0f}")
