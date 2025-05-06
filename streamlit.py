@@ -179,6 +179,12 @@ pipeline = joblib.load("xgb_model_with_loo.pkl")
 average_mae = joblib.load("average_mae.pkl")
 degree_encoder = joblib.load("degree_encoder.pkl")
 
+# Extract the model and encoder
+model = model_bundle["model"]
+loo_encoder = model_bundle["loo_encoder"]
+feature_cols = model_bundle["feature_cols"]
+
+
 # Load Excel data for industry and occupation codes
 @st.cache
 def load_data():
@@ -286,40 +292,51 @@ if submitted:
 
     # 1. Create degree input DataFrame
     degree_input_df = pd.DataFrame([{
-        'DEGFIELD': deg1,
-        'DEGFIELD2': deg2
+        'DEGFIELD': deg1,  # Replace deg1 with actual value
+        'DEGFIELD2': deg2  # Replace deg2 with actual value
     }])
 
     # 2. Get multi-hot encoded degrees and wrap in DataFrame
     degree_array = degree_encoder.transform(degree_input_df.values)
     degree_features_df = pd.DataFrame(degree_array, columns=degree_encoder.classes_)
 
-    # 3. Base input DataFrame from form values
-    input_df = pd.DataFrame([input_dict])
+    # 3. Base input DataFrame from form values (user inputs)
+    input_df = pd.DataFrame([input_dict])  # input_dict contains the user input values
 
     # 4. Merge base input with degree features
     full_input = pd.concat([input_df.reset_index(drop=True),
                             degree_features_df.reset_index(drop=True)], axis=1)
 
-    # 5. Predict income using full pipeline (automatically handles LOO + numeric conversion)
-    predicted_income = pipeline.predict(full_input)[0]
+    # 5. Apply LOO encoding on specified columns
+    user_input_loo = full_input[feature_cols]
+    user_input_non_loo = full_input.drop(columns=feature_cols)
+
+    # Transform LOO columns
+    user_input_loo_encoded = loo_encoder.transform(user_input_loo)
+
+    # Recombine the transformed LOO columns with the non-LOO columns
+    user_input_transformed = pd.concat([user_input_non_loo.reset_index(drop=True),
+                                        user_input_loo_encoded.reset_index(drop=True)], axis=1)
+
+    # 6. Predict income using the model (use transformed data)
+    predicted_income = model.predict(user_input_transformed)[0]  # Get the first prediction if it's a single value
     lower = predicted_income - average_mae
     upper = predicted_income + average_mae
 
-    # 6. Counterfactual gender toggle
-    opposite_input = full_input.copy()
+    # 7. Counterfactual gender toggle
+    opposite_input = user_input_transformed.copy()
     if 'SEX_Male' in opposite_input.columns:
         opposite_input['SEX_Male'] = 1 - opposite_input['SEX_Male']
-    opposite_income = pipeline.predict(opposite_input)[0]
+    opposite_income = model.predict(opposite_input)[0]
     opp_lower = opposite_income - average_mae
     opp_upper = opposite_income + average_mae
 
-    # 7. Calculate percent difference
+    # 8. Calculate percent difference
     percent_diff = ((predicted_income - opposite_income) / opposite_income) * 100
 
-    # 8. Display results
+    # 9. Display results in Streamlit
     st.subheader("Estimated Annual Income")
-    gender_label = "Male" if full_input['SEX_Male'].iloc[0] == 1 else "Female"
+    gender_label = "Male" if user_input_transformed['SEX_Male'].iloc[0] == 1 else "Female"
     st.success(f"{gender_label}: ${predicted_income:,.0f} (±${average_mae:,.0f})")
     st.write(f"**Range:** ${lower:,.0f} - ${upper:,.0f}")
 
