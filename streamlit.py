@@ -238,42 +238,43 @@ if submitted:
         "WKSWORK1": wkswork1
     }
 
+    # 1. Create degree input DataFrame
     degree_input_df = pd.DataFrame([{
-    'DEGFIELD': deg1,
-    'DEGFIELD2': deg2
+        'DEGFIELD': deg1,
+        'DEGFIELD2': deg2
     }])
 
-    # Combine degree fields into one list of degrees
-    combined_degrees = degree_input_df[['DEGFIELD', 'DEGFIELD2']].values.tolist()
-    combined_degrees = [[d for d in row if d] for row in combined_degrees]  # Remove empty strings/nulls
+    # 2. Get multi-hot encoded degrees and wrap in DataFrame
+    degree_array = degree_encoder.transform(degree_input_df.values)
+    degree_features_df = pd.DataFrame(
+        degree_array,
+        columns=degree_encoder.classes_
+    )
 
-    # Transform with MultiLabelBinarizer
-    degree_array = degree_encoder.transform(combined_degrees)
-
-    # Create DataFrame from encoded array with column names
-    degree_features_df = pd.DataFrame(degree_array, columns=degree_encoder.classes_)
-
-
-
-    # 2. Merge base input with degree features
+    # 3. Base input DataFrame
     input_df = pd.DataFrame([input_dict])
+
+    # 4. Merge base input with degree features
     full_input = pd.concat([input_df.reset_index(drop=True), degree_features_df.reset_index(drop=True)], axis=1)
 
-    # 3. Apply Leave-One-Out encoding to select columns
+    # 5. Apply Leave-One-Out encoding
     loo_cols = ['STATEFIP', 'OCCSOC', 'IND']
     non_loo_cols = [col for col in full_input.columns if col not in loo_cols]
+
     loo_encoded = loo_preprocessor.transform(full_input[loo_cols])
 
-    # 4. Combine non-LOO and LOO features
-    final_input = pd.concat([full_input[non_loo_cols].reset_index(drop=True),
-                             pd.DataFrame(loo_encoded, columns=loo_cols)], axis=1)
+    # 6. Combine LOO with non-LOO features
+    final_input = pd.concat([
+        full_input[non_loo_cols].reset_index(drop=True),
+        pd.DataFrame(loo_encoded, columns=loo_preprocessor.get_feature_names_out(), index=full_input.index)
+    ], axis=1)
 
-    # 5. Make prediction
+    # 7. Predict income
     predicted_income = model.predict(final_input)[0]
     lower = predicted_income - average_mae
     upper = predicted_income + average_mae
 
-    # 6. Display result
+    # 8. Display
     st.subheader("Estimated Annual Income")
     st.success(f"${predicted_income:,.0f} (±${average_mae:,.0f})")
     st.write(f"**Range:** ${lower:,.0f} - ${upper:,.0f}")
