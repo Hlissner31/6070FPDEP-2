@@ -243,7 +243,9 @@ if submitted:
         'DEGFIELD': deg1,
         'DEGFIELD2': deg2
     }])
-    degree_features_df = degree_encoder.transform(degree_input_df)
+    degree_array = degree_encoder.transform(degree_input_df)
+    degree_features_df = pd.DataFrame(degree_array, columns=degree_encoder.get_feature_names_out())
+
 
     # 2. Merge base input with degree features
     input_df = pd.DataFrame([input_dict])
