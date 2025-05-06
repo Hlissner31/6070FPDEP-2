@@ -137,8 +137,7 @@ classwkr_map = {'Works for wages':0, 'Self-employed':1}
 
 
 # Load components
-with open('loo_encoder.pkl', 'rb') as f:
-    loo_encoder = pickle.load(f)
+loo_encoder = joblib.load('loo_encoder.pkl')
 model = joblib.load("best_xgb_model.pkl")
 average_mae = joblib.load("average_mae.pkl")
 degree_encoder = joblib.load("degree_encoder.pkl")
