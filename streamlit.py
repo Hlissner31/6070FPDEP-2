@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
+import pickle
 
 # ✅ MUST come before any Streamlit command
 st.set_page_config(page_title="Income Prediction App", layout="wide")
@@ -136,7 +137,8 @@ classwkr_map = {'Works for wages':0, 'Self-employed':1}
 
 
 # Load components
-loo_preprocessor = joblib.load("loo_encoder.pkl")
+with open('loo_encoder.pkl', 'rb') as f:
+    loo_encoder = pickle.load(f)
 model = joblib.load("best_xgb_model.pkl")
 average_mae = joblib.load("average_mae.pkl")
 degree_encoder = joblib.load("degree_encoder.pkl")
@@ -238,43 +240,44 @@ if submitted:
         "WKSWORK1": wkswork1
     }
 
-    # 1. Create degree input DataFrame
-    degree_input_df = pd.DataFrame([{
-        'DEGFIELD': deg1,
-        'DEGFIELD2': deg2
-    }])
+# 1. Create degree input DataFrame
+degree_input_df = pd.DataFrame([{
+    'DEGFIELD': deg1,
+    'DEGFIELD2': deg2
+}])
 
-    # 2. Get multi-hot encoded degrees and wrap in DataFrame
-    degree_array = degree_encoder.transform(degree_input_df.values)
-    degree_features_df = pd.DataFrame(
-        degree_array,
-        columns=degree_encoder.classes_
-    )
+# 2. Get multi-hot encoded degrees and wrap in DataFrame
+degree_array = degree_encoder.transform(degree_input_df.values)
+degree_features_df = pd.DataFrame(
+    degree_array,
+    columns=degree_encoder.classes_
+)
 
-    # 3. Base input DataFrame
-    input_df = pd.DataFrame([input_dict])
+# 3. Base input DataFrame
+input_df = pd.DataFrame([input_dict])
 
-    # 4. Merge base input with degree features
-    full_input = pd.concat([input_df.reset_index(drop=True), degree_features_df.reset_index(drop=True)], axis=1)
+# 4. Merge base input with degree features
+full_input = pd.concat([input_df.reset_index(drop=True), degree_features_df.reset_index(drop=True)], axis=1)
 
-    # 5. Apply Leave-One-Out encoding
-    loo_cols = ['STATEFIP', 'OCCSOC', 'IND']
-    non_loo_cols = [col for col in full_input.columns if col not in loo_cols]
+# 5. Apply Leave-One-Out encoding (using the pre-fitted encoder)
+loo_cols = ['STATEFIP', 'OCCSOC', 'IND']
+non_loo_cols = [col for col in full_input.columns if col not in loo_cols]
 
-    loo_encoded = loo_preprocessor.transform(full_input[loo_cols])
+# Transform the LOO columns (without fitting)
+loo_encoded = loo_encoder.transform(full_input[loo_cols])
 
-    # 6. Combine LOO with non-LOO features
-    final_input = pd.concat([
-        full_input[non_loo_cols].reset_index(drop=True),
-        pd.DataFrame(loo_encoded, columns=loo_preprocessor.get_feature_names_out(), index=full_input.index)
-    ], axis=1)
+# 6. Combine LOO with non-LOO features
+final_input = pd.concat([
+    full_input[non_loo_cols].reset_index(drop=True),
+    pd.DataFrame(loo_encoded, columns=loo_encoder.get_feature_names_out(), index=full_input.index)
+], axis=1)
 
-    # 7. Predict income
-    predicted_income = model.predict(final_input)[0]
-    lower = predicted_income - average_mae
-    upper = predicted_income + average_mae
+# 7. Predict income
+predicted_income = model.predict(final_input)[0]
+lower = predicted_income - average_mae
+upper = predicted_income + average_mae
 
-    # 8. Display
-    st.subheader("Estimated Annual Income")
-    st.success(f"${predicted_income:,.0f} (±${average_mae:,.0f})")
-    st.write(f"**Range:** ${lower:,.0f} - ${upper:,.0f}")
+# 8. Display
+st.subheader("Estimated Annual Income")
+st.success(f"${predicted_income:,.0f} (±${average_mae:,.0f})")
+st.write(f"**Range:** ${lower:,.0f} - ${upper:,.0f}")
