@@ -370,17 +370,15 @@ opp_upper = opposite_income + average_mae
 # Calculate the percent difference between the predicted income and the counterfactual
 percent_diff = ((predicted_income - opposite_income) / opposite_income) * 100
 
-# Display results (flipping the gender label interpretation)
+# Display results
 st.subheader("Estimated Annual Income")
-# Flipped: 1 actually means Female
-gender_label = "Female" if user_input_transformed['SEX_Male'].iloc[0] == 1 else "Male"
+gender_label = "Male" if user_input_transformed['SEX_Male'].iloc[0] == 1 else "Female"
 st.success(f"{gender_label}: ${predicted_income:,.0f} (±${average_mae:,.0f})")
 st.write(f"**Range:** ${lower:,.0f} - ${upper:,.0f}")
 
 st.subheader("Counterfactual (Opposite Gender)")
-opp_gender_label = "Male" if gender_label == "Female" else "Female"
+opp_gender_label = "Female" if gender_label == "Male" else "Male"
 st.info(f"{opp_gender_label}: ${opposite_income:,.0f} (±${average_mae:,.0f})")
 st.write(f"**Range:** ${opp_lower:,.0f} - ${opp_upper:,.0f}")
 
 st.markdown(f"**The predicted income is {abs(percent_diff):.1f}% {'higher' if percent_diff > 0 else 'lower'} than it would be if the person were {opp_gender_label}.**")
-
