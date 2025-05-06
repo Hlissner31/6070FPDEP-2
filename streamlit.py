@@ -276,7 +276,7 @@ if submitted:
     # 7. Dynamically name the LOO encoded columns based on the original column names
     loo_encoded_df = pd.DataFrame(
         loo_encoded,
-        columns=[f"LOO_{col}" for col in loo_cols],  # Dynamically generate column names
+        columns=[f"LOO_{col}" for col in loo_cols],
         index=full_input.index
     )
 
@@ -284,24 +284,33 @@ if submitted:
     final_input = pd.concat([full_input[non_loo_cols].reset_index(drop=True),
                             loo_encoded_df.reset_index(drop=True)], axis=1)
 
-    # Ensure the columns are strings before attempting to replace the "LOO_" prefix
-    final_input.columns = [str(col) for col in final_input.columns]  # Convert column names to strings
-
-    # Get the model's expected feature names
+    # 9. Clean and align column names
+    final_input.columns = [str(col) for col in final_input.columns]
     expected_features = model.get_booster().feature_names
-
-    # 9. Ensure the columns match the model's expected order
     final_input.columns = [col if col in expected_features else col.replace("LOO_", "") for col in final_input.columns]
-    final_input = final_input[expected_features]  # Reorder to match the model's feature order
+    final_input = final_input[expected_features]
 
-    # 10. Predict income using the model
+    # 10. Predict income for selected gender
     predicted_income = model.predict(final_input)[0]
-
-    # Compute prediction range using average MAE (Mean Absolute Error)
     lower = predicted_income - average_mae
     upper = predicted_income + average_mae
 
-    # 11. Display results in Streamlit
+    # 11. Predict income for opposite gender
+    opposite_input = final_input.copy()
+    if 'SEX_Male' in opposite_input.columns:
+        opposite_input['SEX_Male'] = 1 - opposite_input['SEX_Male']
+    opposite_income = model.predict(opposite_input)[0]
+    opp_lower = opposite_income - average_mae
+    opp_upper = opposite_income + average_mae
+
+    # 12. Display results in Streamlit
     st.subheader("Estimated Annual Income")
-    st.success(f"${predicted_income:,.0f} (±${average_mae:,.0f})")
+    gender_label = "Male" if final_input['SEX_Male'].iloc[0] == 1 else "Female"
+    st.success(f"{gender_label}: ${predicted_income:,.0f} (±${average_mae:,.0f})")
     st.write(f"**Range:** ${lower:,.0f} - ${upper:,.0f}")
+
+    st.subheader("Counterfactual (Opposite Gender)")
+    opp_gender_label = "Female" if gender_label == "Male" else "Male"
+    st.info(f"{opp_gender_label}: ${opposite_income:,.0f} (±${average_mae:,.0f})")
+    st.write(f"**Range:** ${opp_lower:,.0f} - ${opp_upper:,.0f}")
+
