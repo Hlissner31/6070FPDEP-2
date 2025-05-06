@@ -8,22 +8,17 @@ import pickle
 st.set_page_config(page_title="Income Prediction App", layout="wide")
 
 # Example of manual mappings for selected features
-state_name_to_fips = {
-        "Alabama": 1, "Alaska": 2, "Arizona": 4, "Arkansas": 5,
-        "California": 6, "Colorado": 8, "Connecticut": 9, "Delaware": 10,
-        "District of Columbia": 11, "Florida": 12, "Georgia": 13,
-        "Hawaii": 15, "Idaho": 16, "Illinois": 17, "Indiana": 18,
-        "Iowa": 19, "Kansas": 20, "Kentucky": 21, "Louisiana": 22,
-        "Maine": 23, "Maryland": 24, "Massachusetts": 25, "Michigan": 26,
-        "Minnesota": 27, "Mississippi": 28, "Missouri": 29, "Montana": 30,
-        "Nebraska": 31, "Nevada": 32, "New Hampshire": 33, "New Jersey": 34,
-        "New Mexico": 35, "New York": 36, "North Carolina": 37,
-        "North Dakota": 38, "Ohio": 39, "Oklahoma": 40, "Oregon": 41,
-        "Pennsylvania": 42, "Rhode Island": 44, "South Carolina": 45,
-        "South Dakota": 46, "Tennessee": 47, "Texas": 48, "Utah": 49,
-        "Vermont": 50, "Virginia": 51, "Washington": 53,
-        "West Virginia": 54, "Wisconsin": 55, "Wyoming": 56
-}
+state_names = [
+    "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
+    "Connecticut", "Delaware", "District of Columbia", "Florida", "Georgia",
+    "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky",
+    "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota",
+    "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire",
+    "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota",
+    "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island",
+    "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont",
+    "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"
+]
 sex_map = {'Male': 0, 'Female': 1}
 REGION_map = {
         'East South Central Div.': 1,
@@ -164,7 +159,7 @@ with st.form("income_form"):
 
         age = st.number_input("Age", 0, 120, 30)
         sex = st.selectbox("Sex", ["Male", "Female"])
-        state_name = st.selectbox("State", list(state_name_to_fips.keys()))
+        state_name = st.selectbox("State", state_names)
         nchil = st.number_input("Number of Children", 0, 9, 0)
         uhrswork = st.number_input("Hours Worked per Week", 0, 100, 40)
 
