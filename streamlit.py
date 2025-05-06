@@ -7,6 +7,40 @@ import pickle
 # ✅ MUST come before any Streamlit command
 st.set_page_config(page_title="Income Prediction App", layout="wide")
 
+# custom_transformers.py
+from sklearn.base import BaseEstimator, TransformerMixin
+import numpy as np
+
+class LOOImputer(BaseEstimator, TransformerMixin):
+    def __init__(self, cols=None, sigma=0.0):
+        self.cols = cols
+        self.sigma = sigma
+        self.global_mean = None
+        self.target_means = {}
+
+    def fit(self, X, y):
+        self.global_mean = np.mean(y)
+        for col in self.cols:
+            self.target_means[col] = {}
+            categories = X[col].unique()
+            for cat in categories:
+                mask = X[col] == cat
+                if mask.sum() > 1:
+                    self.target_means[col][cat] = (y[mask].sum() - y[mask].iloc[0]) / (mask.sum() - 1)
+                else:
+                    self.target_means[col][cat] = self.global_mean
+        return self
+
+    def transform(self, X):
+        X_transformed = X.copy()
+        rng = np.random.default_rng()
+        for col in self.cols:
+            means = self.target_means[col]
+            X_transformed[col] = X[col].apply(
+                lambda x: means.get(x, self.global_mean) + rng.normal(0, self.sigma)
+            )
+        return X_transformed
+
 # Example of manual mappings for selected features
 state_names = [
     "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
