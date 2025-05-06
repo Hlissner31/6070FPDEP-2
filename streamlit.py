@@ -374,11 +374,11 @@ opp_upper = opposite_income + average_mae
 percent_diff = ((predicted_income - opposite_income) / opposite_income) * 100
 
 # DEBUG INFO
-st.write("DEBUG - Gender encoding:")
-st.write("Original (0=Male, 1=Female):")
-st.write(user_input_transformed[['SEX_Male']])
-st.write("Counterfactual:")
-st.write(opposite_input[['SEX_Male']])
+#st.write("DEBUG - Gender encoding:")
+#st.write("Original (0=Male, 1=Female):")
+#st.write(user_input_transformed[['SEX_Male']])
+#st.write("Counterfactual:")
+#st.write(opposite_input[['SEX_Male']])
 
 # Determine gender from encoding (0=Male, 1=Female)
 if user_input_transformed['SEX_Male'].iloc[0] == 1:
