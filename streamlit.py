@@ -219,8 +219,6 @@ with st.form("income_form"):
 
     submitted = st.form_submit_button("Predict Income")
 
-submitted = st.form_submit_button("Predict Income")
-
 if submitted:
     # Base input dictionary
     input_dict = {
