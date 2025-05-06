@@ -62,7 +62,7 @@ state_names = [
     "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont",
     "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"
 ]
-sex_map = {'Male': 1, 'Female': 0}
+sex_map = {'Male': 0, 'Female': 1}
 REGION_map = {
         'East South Central Div.': 1,
         'Pacific Division': 2,
