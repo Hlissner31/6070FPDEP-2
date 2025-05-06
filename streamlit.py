@@ -281,30 +281,27 @@ if submitted:
     )
 
     # 8. Combine LOO encoded columns with non-LOO columns
-    final_input = pd.concat([ 
-        full_input[non_loo_cols].reset_index(drop=True),
-        loo_encoded_df.reset_index(drop=True)
-    ], axis=1)
+    final_input = pd.concat([full_input[non_loo_cols].reset_index(drop=True),
+                            loo_encoded_df.reset_index(drop=True)], axis=1)
 
     # Ensure the columns are strings before attempting to replace the "LOO_" prefix
     final_input.columns = [str(col) for col in final_input.columns]  # Convert column names to strings
 
-    # 9. Get the model's expected feature names
+    # Get the model's expected feature names
     expected_features = model.get_booster().feature_names
 
-    # 10. Adjust column names if they don't match the expected features
-    final_input.columns = [
-        col if col in expected_features else col.replace("LOO_", "") for col in final_input.columns
-    ]
+    # 9. Ensure the columns match the model's expected order
+    final_input.columns = [col if col in expected_features else col.replace("LOO_", "") for col in final_input.columns]
+    final_input = final_input[expected_features]  # Reorder to match the model's feature order
 
-    # 11. Predict income using the model
+    # 10. Predict income using the model
     predicted_income = model.predict(final_input)[0]
 
     # Compute prediction range using average MAE (Mean Absolute Error)
     lower = predicted_income - average_mae
     upper = predicted_income + average_mae
 
-    # 12. Display results in Streamlit
+    # 11. Display results in Streamlit
     st.subheader("Estimated Annual Income")
     st.success(f"${predicted_income:,.0f} (±${average_mae:,.0f})")
     st.write(f"**Range:** ${lower:,.0f} - ${upper:,.0f}")
