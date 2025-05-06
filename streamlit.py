@@ -364,29 +364,40 @@ upper = predicted_income + average_mae
 opposite_input = user_input_transformed.copy()
 if 'SEX_Male' in opposite_input.columns:
     opposite_input['SEX_Male'] = 1 - opposite_input['SEX_Male']
+
+# Predict counterfactual income
 opposite_income = model.predict(opposite_input)[0]
 opp_lower = opposite_income - average_mae
 opp_upper = opposite_income + average_mae
 
-# Calculate the percent difference between the predicted income and the counterfactual
+# Calculate percent difference
 percent_diff = ((predicted_income - opposite_income) / opposite_income) * 100
 
-
+# DEBUG INFO
 st.write("DEBUG - Gender encoding:")
+st.write("Original (0=Male, 1=Female):")
 st.write(user_input_transformed[['SEX_Male']])
 st.write("Counterfactual:")
 st.write(opposite_input[['SEX_Male']])
 
+# Determine gender from encoding (0=Male, 1=Female)
+if user_input_transformed['SEX_Male'].iloc[0] == 1:
+    gender_label = "Female"
+    opp_gender_label = "Male"
+else:
+    gender_label = "Male"
+    opp_gender_label = "Female"
 
 # Display results
 st.subheader("Estimated Annual Income")
-gender_label = "Male" if user_input_transformed['SEX_Male'].iloc[0] == 1 else "Female"
 st.success(f"{gender_label}: ${predicted_income:,.0f} (±${average_mae:,.0f})")
 st.write(f"**Range:** ${lower:,.0f} - ${upper:,.0f}")
 
 st.subheader("Counterfactual (Opposite Gender)")
-opp_gender_label = "Female" if gender_label == "Male" else "Male"
 st.info(f"{opp_gender_label}: ${opposite_income:,.0f} (±${average_mae:,.0f})")
 st.write(f"**Range:** ${opp_lower:,.0f} - ${opp_upper:,.0f}")
 
-st.markdown(f"**The predicted income is {abs(percent_diff):.1f}% {'higher' if percent_diff > 0 else 'lower'} than it would be if the person were {opp_gender_label}.**")
+st.markdown(
+    f"**The predicted income is {abs(percent_diff):.1f}% "
+    f"{'higher' if percent_diff > 0 else 'lower'} than it would be if the person were {opp_gender_label}.**"
+)
