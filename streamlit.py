@@ -216,8 +216,8 @@ with st.form("income_form"):
 
     submitted = st.form_submit_button("Predict Income")
 
-# Predict
 if submitted:
+    # Base input dictionary
     input_dict = {
         "AGE": age,
         "SEX": sexcode,
@@ -237,36 +237,33 @@ if submitted:
         "IND": ind,        # Industry code
         "WKSWORK1": wkswork1
     }
-    # Create DataFrame for degree fields only
+
+    # 1. Degree field multi-hot encoding
     degree_input_df = pd.DataFrame([{
         'DEGFIELD': deg1,
         'DEGFIELD2': deg2
     }])
-
-    # Use degree_encoder to get multi-hot encoded degrees
     degree_features_df = degree_encoder.transform(degree_input_df)
+
+    # 2. Merge base input with degree features
     input_df = pd.DataFrame([input_dict])
     full_input = pd.concat([input_df.reset_index(drop=True), degree_features_df.reset_index(drop=True)], axis=1)
 
-    # Separate out LOO columns from full input
+    # 3. Apply Leave-One-Out encoding to select columns
     loo_cols = ['STATEFIP', 'OCCSOC', 'IND']
     non_loo_cols = [col for col in full_input.columns if col not in loo_cols]
-
-    # Apply LOO only to loo_cols
     loo_encoded = loo_preprocessor.transform(full_input[loo_cols])
 
-    # Concatenate LOO and rest of data
+    # 4. Combine non-LOO and LOO features
     final_input = pd.concat([full_input[non_loo_cols].reset_index(drop=True),
-                            loo_encoded.reset_index(drop=True)], axis=1)
+                             pd.DataFrame(loo_encoded, columns=loo_cols)], axis=1)
 
-
-    input_df = pd.DataFrame([input_dict])
-
+    # 5. Make prediction
     predicted_income = model.predict(final_input)[0]
-
     lower = predicted_income - average_mae
     upper = predicted_income + average_mae
 
+    # 6. Display result
     st.subheader("Estimated Annual Income")
     st.success(f"${predicted_income:,.0f} (±${average_mae:,.0f})")
     st.write(f"**Range:** ${lower:,.0f} - ${upper:,.0f}")
