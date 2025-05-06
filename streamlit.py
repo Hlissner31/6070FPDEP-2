@@ -238,13 +238,21 @@ if submitted:
         "WKSWORK1": wkswork1
     }
 
-    # 1. Degree field multi-hot encoding
     degree_input_df = pd.DataFrame([{
-        'DEGFIELD': deg1,
-        'DEGFIELD2': deg2
+    'DEGFIELD': deg1,
+    'DEGFIELD2': deg2
     }])
-    degree_array = degree_encoder.transform(degree_input_df)
-    degree_features_df = pd.DataFrame(degree_array, columns=degree_encoder.get_feature_names_out())
+
+    # Combine degree fields into one list of degrees
+    combined_degrees = degree_input_df[['DEGFIELD', 'DEGFIELD2']].values.tolist()
+    combined_degrees = [[d for d in row if d] for row in combined_degrees]  # Remove empty strings/nulls
+
+    # Transform with MultiLabelBinarizer
+    degree_array = degree_encoder.transform(combined_degrees)
+
+    # Create DataFrame from encoded array with column names
+    degree_features_df = pd.DataFrame(degree_array, columns=degree_encoder.classes_)
+
 
 
     # 2. Merge base input with degree features
