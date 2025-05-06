@@ -175,7 +175,8 @@ classwkr_map = {'Works for wages':0, 'Self-employed':1}
 
 
 # Load components
-pipeline = joblib.load("xgb_model_with_loo.pkl")
+with open("xgb_model_with_loo.pkl", "rb") as f:
+    model_bundle = pickle.load(f)
 average_mae = joblib.load("average_mae.pkl")
 degree_encoder = joblib.load("degree_encoder.pkl")
 
