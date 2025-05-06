@@ -175,7 +175,7 @@ classwkr_map = {'Works for wages':0, 'Self-employed':1}
 
 
 # Load components
-pipeline = joblib.load("loo_xgb_pipeline.pkl")
+pipeline = joblib.load("xgb_model_with_loo.pkl")
 average_mae = joblib.load("average_mae.pkl")
 degree_encoder = joblib.load("degree_encoder.pkl")
 
