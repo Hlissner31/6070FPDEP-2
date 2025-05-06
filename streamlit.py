@@ -178,7 +178,6 @@ with st.form("income_form"):
             "Separated", "Widowed"
 ])
         trantime = st.number_input("Transit Time (minutes)", 0, 999, 30)
-        transwork = st.selectbox("Mode of Transport to Work (TRANWORK)", list(TRANWORK_map.keys()))
         transwork_code = TRANWORK_map[transwork]  # Ensure mapping happens here
         degree_choices = list(degree_to_manual_label.keys())
         selected_degrees = st.multiselect(
@@ -239,7 +238,6 @@ if submitted:
         "NCHILD": nchil,
         "UHRSWORK": uhrswork,
         "TRANTIME": trantime,
-        "TRANWORK": transwork_code,
         "SPEAKENG_ENCODED": speakeng_code,
         "EDUC_ENCODED": educ_code,
         "RACE": race_code,
@@ -273,28 +271,29 @@ if submitted:
     loo_cols = ['STATEFIP', 'OCCSOC', 'IND']
     non_loo_cols = [col for col in full_input.columns if col not in loo_cols]
 
+    # 6. Apply transformations to LOO columns
     # Transform the LOO columns (without fitting)
     loo_encoded = loo_encoder.transform(full_input[loo_cols])
 
-    # 6. Manually name the LOO encoded columns
-    loo_encoded_df = pd.DataFrame(
-        loo_encoded,
-        columns=[f"LOO_{col}" for col in loo_cols],  # Manually name the columns
-        index=full_input.index
-    )
+    # Handle missing/NaN values resulting from unseen categories during encoding
+    # Here we fill NaN values with a meaningful value, such as the mean of the target variable
+    target_mean = 50000  # Replace with actual mean of target in your dataset
+    loo_encoded = pd.DataFrame(loo_encoded, columns=[f"LOO_{col}" for col in loo_cols]).fillna(target_mean)
 
-    # 7. Combine LOO with non-LOO features
+    # 7. Combine LOO encoded columns with non-LOO columns
     final_input = pd.concat([
         full_input[non_loo_cols].reset_index(drop=True),
-        loo_encoded_df.reset_index(drop=True)
+        loo_encoded.reset_index(drop=True)
     ], axis=1)
 
-    # 8. Predict income
+    # 8. Predict income using the model
     predicted_income = model.predict(final_input)[0]
+
+    # Compute prediction range using average MAE (Mean Absolute Error)
     lower = predicted_income - average_mae
     upper = predicted_income + average_mae
 
-    # 9. Display
+    # 9. Display results in Streamlit
     st.subheader("Estimated Annual Income")
     st.success(f"${predicted_income:,.0f} (±${average_mae:,.0f})")
     st.write(f"**Range:** ${lower:,.0f} - ${upper:,.0f}")
