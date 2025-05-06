@@ -163,17 +163,21 @@ with st.form("income_form"):
     with col1:
 
         age = st.number_input("Age", 0, 120, 30)
-        sex = st.selectbox("Sex", list(sex_map.keys()))
-        sexcode = sex_map[sex]  # Ensure mapping happens here
+        sex = st.selectbox("Sex", ["Male", "Female"])
         state_name = st.selectbox("State", list(state_name_to_fips.keys()))
-        marital_status = st.selectbox("Marital Status (MARST)", list(MARST_map.keys()))
-        marital_status_code = MARST_map[marital_status]  # Apply marital status mapping here
         nchil = st.number_input("Number of Children", 0, 9, 0)
         uhrswork = st.number_input("Hours Worked per Week", 0, 100, 40)
 
     with col2:
-        classwkr = st.selectbox("Class of Worker (CLASSWKR)", list(classwkr_map.keys()))
-        classwkr_code = classwkr_map[classwkr]  # Ensure mapping happens here
+        sex = st.selectbox("Sex", ["Male", "Female"])
+        classwkrd = st.selectbox("Class of Worker", [
+            "Local govt employee", "Self-employed, incorporated", "Self-employed, not incorporated",
+            "State govt employee", "Wage/salary at non-profit", "Wage/salary, private"
+        ])
+        marst = st.selectbox("Marital Status", [
+            "Married, spouse absent", "Married, spouse present", "Never married/single",
+            "Separated", "Widowed"
+])
         trantime = st.number_input("Transit Time (minutes)", 0, 999, 30)
         transwork = st.selectbox("Mode of Transport to Work (TRANWORK)", list(TRANWORK_map.keys()))
         transwork_code = TRANWORK_map[transwork]  # Ensure mapping happens here
@@ -220,12 +224,21 @@ if submitted:
     # Base input dictionary
     input_dict = {
         "AGE": age,
-        "SEX_Male": sexcode,
+        'SEX_Male': int(sex == "Male"),
+        'CLASSWKRD_Local govt employee': int(classwkrd == "Local govt employee"),
+        'CLASSWKRD_Self-employed, incorporated': int(classwkrd == "Self-employed, incorporated"),
+        'CLASSWKRD_Self-employed, not incorporated': int(classwkrd == "Self-employed, not incorporated"),
+        'CLASSWKRD_State govt employee': int(classwkrd == "State govt employee"),
+        'CLASSWKRD_Wage/salary at non-profit': int(classwkrd == "Wage/salary at non-profit"),
+        'CLASSWKRD_Wage/salary, private': int(classwkrd == "Wage/salary, private"),
+        'MARST_Married, spouse absent': int(marst == "Married, spouse absent"),
+        'MARST_Married, spouse present': int(marst == "Married, spouse present"),
+        'MARST_Never married/single': int(marst == "Never married/single"),
+        'MARST_Separated': int(marst == "Separated"),
+        'MARST_Widowed': int(marst == "Widowed"),
         "STATEFIP": state_name,
-        "MARST": marital_status_code,
         "NCHILD": nchil,
         "UHRSWORK": uhrswork,
-        "CLASSWKR": classwkr_code,
         "TRANTIME": trantime,
         "TRANWORK": transwork_code,
         "SPEAKENG_ENCODED": speakeng_code,
