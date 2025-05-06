@@ -40,6 +40,15 @@ class LOOImputer(BaseEstimator, TransformerMixin):
                 lambda x: means.get(x, self.global_mean) + rng.normal(0, self.sigma)
             )
         return X_transformed
+# custom_transformers.py
+from sklearn.base import BaseEstimator, TransformerMixin
+
+class EnsureNumeric(BaseEstimator, TransformerMixin):
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        return X.apply(pd.to_numeric, errors='coerce')
 
 # Example of manual mappings for selected features
 state_names = [
