@@ -352,6 +352,7 @@ user_input_transformed = pd.concat([user_input_non_loo.reset_index(drop=True),
 # Ensure the columns match exactly with what the model expects
 user_input_transformed = user_input_transformed[model.feature_names_in_]
 
+
 # Predict income using the trained model
 predicted_income = model.predict(user_input_transformed)[0]
 
@@ -369,6 +370,13 @@ opp_upper = opposite_income + average_mae
 
 # Calculate the percent difference between the predicted income and the counterfactual
 percent_diff = ((predicted_income - opposite_income) / opposite_income) * 100
+
+
+st.write("DEBUG - Gender encoding:")
+st.write(user_input_transformed[['SEX_Male']])
+st.write("Counterfactual:")
+st.write(opposite_input[['SEX_Male']])
+
 
 # Display results
 st.subheader("Estimated Annual Income")
