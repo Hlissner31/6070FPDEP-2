@@ -169,7 +169,6 @@ with st.form("income_form"):
         uhrswork = st.number_input("Hours Worked per Week", 0, 100, 40)
 
     with col2:
-        sex = st.selectbox("Sex", ["Male", "Female"])
         classwkrd = st.selectbox("Class of Worker", [
             "Local govt employee", "Self-employed, incorporated", "Self-employed, not incorporated",
             "State govt employee", "Wage/salary at non-profit", "Wage/salary, private"
