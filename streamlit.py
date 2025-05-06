@@ -132,8 +132,7 @@ classwkr_map = {'Works for wages':0, 'Self-employed':1}
 
 
 # Load components
-loo_encoder = joblib.load('loo_encoder.pkl')
-model = joblib.load("best_xgb_model.pkl")
+pipeline = joblib.load("loo_xgb_model.pkl")
 average_mae = joblib.load("average_mae.pkl")
 degree_encoder = joblib.load("degree_encoder.pkl")
 
@@ -250,60 +249,34 @@ if submitted:
 
     # 2. Get multi-hot encoded degrees and wrap in DataFrame
     degree_array = degree_encoder.transform(degree_input_df.values)
-    degree_features_df = pd.DataFrame(
-        degree_array,
-        columns=degree_encoder.classes_
-    )
+    degree_features_df = pd.DataFrame(degree_array, columns=degree_encoder.classes_)
 
-    # 3. Base input DataFrame
+    # 3. Base input DataFrame from form values
     input_df = pd.DataFrame([input_dict])
 
     # 4. Merge base input with degree features
-    full_input = pd.concat([input_df.reset_index(drop=True), degree_features_df.reset_index(drop=True)], axis=1)
+    full_input = pd.concat([input_df.reset_index(drop=True),
+                            degree_features_df.reset_index(drop=True)], axis=1)
 
-    # 5. Apply Leave-One-Out encoding (using the pre-fitted encoder)
-    loo_cols = ['STATEFIP', 'OCCSOC', 'IND']
-    non_loo_cols = [col for col in full_input.columns if col not in loo_cols]
-
-    # 6. Apply transformations to LOO columns (without fitting)
-    loo_encoded = loo_encoder.transform(full_input[loo_cols])
-
-    # 7. Dynamically name the LOO encoded columns based on the original column names
-    loo_encoded_df = pd.DataFrame(
-        loo_encoded,
-        columns=[f"LOO_{col}" for col in loo_cols],
-        index=full_input.index
-    )
-
-    # 8. Combine LOO encoded columns with non-LOO columns
-    final_input = pd.concat([full_input[non_loo_cols].reset_index(drop=True),
-                            loo_encoded_df.reset_index(drop=True)], axis=1)
-
-    # 9. Clean and align column names
-    final_input.columns = [str(col) for col in final_input.columns]
-    expected_features = model.get_booster().feature_names
-    final_input.columns = [col if col in expected_features else col.replace("LOO_", "") for col in final_input.columns]
-    final_input = final_input[expected_features]
-
-    # 10. Predict income for selected gender
-    predicted_income = model.predict(final_input)[0]
+    # 5. Predict income using full pipeline (automatically handles LOO + numeric conversion)
+    predicted_income = pipeline.predict(full_input)[0]
     lower = predicted_income - average_mae
     upper = predicted_income + average_mae
 
-    # 11. Predict income for opposite gender
-    opposite_input = final_input.copy()
+    # 6. Counterfactual gender toggle
+    opposite_input = full_input.copy()
     if 'SEX_Male' in opposite_input.columns:
         opposite_input['SEX_Male'] = 1 - opposite_input['SEX_Male']
-    opposite_income = model.predict(opposite_input)[0]
+    opposite_income = pipeline.predict(opposite_input)[0]
     opp_lower = opposite_income - average_mae
     opp_upper = opposite_income + average_mae
 
-    # 12. Calculate percentage difference
+    # 7. Calculate percent difference
     percent_diff = ((predicted_income - opposite_income) / opposite_income) * 100
 
-    # 13. Display results in Streamlit
+    # 8. Display results
     st.subheader("Estimated Annual Income")
-    gender_label = "Male" if final_input['SEX_Male'].iloc[0] == 1 else "Female"
+    gender_label = "Male" if full_input['SEX_Male'].iloc[0] == 1 else "Female"
     st.success(f"{gender_label}: ${predicted_income:,.0f} (±${average_mae:,.0f})")
     st.write(f"**Range:** ${lower:,.0f} - ${upper:,.0f}")
 
@@ -312,6 +285,4 @@ if submitted:
     st.info(f"{opp_gender_label}: ${opposite_income:,.0f} (±${average_mae:,.0f})")
     st.write(f"**Range:** ${opp_lower:,.0f} - ${opp_upper:,.0f}")
 
-    # 14. Display % difference
-    diff_text = "higher" if percent_diff > 0 else "lower"
-    st.markdown(f"**The predicted income is {abs(percent_diff):.1f}% {diff_text} than it would be if the person were {opp_gender_label}.**")
+    st.markdown(f"**The predicted income is {abs(percent_diff):.1f}% {'higher' if percent_diff > 0 else 'lower'} than it would be if the person were {opp_gender_label}.**")
