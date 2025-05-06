@@ -377,7 +377,7 @@ st.success(f"{gender_label}: ${predicted_income:,.0f} (±${average_mae:,.0f})")
 st.write(f"**Range:** ${lower:,.0f} - ${upper:,.0f}")
 
 st.subheader("Counterfactual (Opposite Gender)")
-opp_gender_label = "Male" if gender_label == "Female" else "Female"
+opp_gender_label = "Male" if gender_label == "Female" else "Male"
 st.info(f"{opp_gender_label}: ${opposite_income:,.0f} (±${average_mae:,.0f})")
 st.write(f"**Range:** ${opp_lower:,.0f} - ${opp_upper:,.0f}")
 
