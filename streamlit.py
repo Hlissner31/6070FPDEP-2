@@ -283,11 +283,11 @@ input_dict = {
     'MARST_Never married/single': int(marst == "Never married/single"),
     'MARST_Separated': int(marst == "Separated"),
     'MARST_Widowed': int(marst == "Widowed"),
-    "STATEFIP": state_name,
     "SPEAKENG_ENCODED": speakeng_code,
     "EDUC_ENCODED": educ_code,
     "OCCSOC": occsoc,  # Occupation code
     "IND": ind,        # Industry code
+    "STATEFIP": state_name,
 }
 
 # Create the input dataframe
@@ -312,7 +312,30 @@ feature_order = [
     'Library Science', 'Military Technologies', 'SPEAKENG_ENCODED', 'EDUC_ENCODED', 'OCCSOC', 'IND', 'STATEFIP'
 ]
 
-# Reorder the input DataFrame to match the feature order
+# 1. Create degree input DataFrame
+degree_input_df = pd.DataFrame([{
+    'DEGFIELD': deg1,  # Replace deg1 with actual value
+    'DEGFIELD2': deg2  # Replace deg2 with actual value
+}])
+
+# 2. Get multi-hot encoded degrees and wrap in DataFrame
+degree_array = degree_encoder.transform(degree_input_df.values)
+degree_features_df = pd.DataFrame(degree_array, columns=degree_encoder.classes_)
+
+# 3. Ensure degree columns are in the correct order in feature_order
+degree_columns = degree_features_df.columns.tolist()
+
+# 4. Add degree columns to the input DataFrame
+input_df = input_df.join(degree_features_df)
+
+# 5. Reorder the input DataFrame to match the feature order
+missing_columns = set(feature_order) - set(input_df.columns)
+
+# Add missing columns with default values (0 or NaN)
+for col in missing_columns:
+    input_df[col] = 0  # or pd.NA if you'd prefer
+
+# Reorder the columns of input_df to match feature_order
 input_df = input_df[feature_order]
 
 # Apply Leave-One-Out Encoding (LOO) on the relevant columns if needed
