@@ -261,89 +261,101 @@ with st.form("income_form"):
 
     submitted = st.form_submit_button("Predict Income")
 
-if submitted:
-    # Base input dictionary
-    input_dict = {
-        "AGE": age,
-        'SEX_Male': int(sex == "Male"),
-        'CLASSWKRD_Local govt employee': int(classwkrd == "Local govt employee"),
-        'CLASSWKRD_Self-employed, incorporated': int(classwkrd == "Self-employed, incorporated"),
-        'CLASSWKRD_Self-employed, not incorporated': int(classwkrd == "Self-employed, not incorporated"),
-        'CLASSWKRD_State govt employee': int(classwkrd == "State govt employee"),
-        'CLASSWKRD_Wage/salary at non-profit': int(classwkrd == "Wage/salary at non-profit"),
-        'CLASSWKRD_Wage/salary, private': int(classwkrd == "Wage/salary, private"),
-        'MARST_Married, spouse absent': int(marst == "Married, spouse absent"),
-        'MARST_Married, spouse present': int(marst == "Married, spouse present"),
-        'MARST_Never married/single': int(marst == "Never married/single"),
-        'MARST_Separated': int(marst == "Separated"),
-        'MARST_Widowed': int(marst == "Widowed"),
-        "STATEFIP": state_name,
-        "NCHILD": nchil,
-        "UHRSWORK": uhrswork,
-        "TRANTIME": trantime,
-        "SPEAKENG_ENCODED": speakeng_code,
-        "EDUC_ENCODED": educ_code,
-        "RACE": race_code,
-        "BPL": bpl_code,
-        "ANCESTR1": ancestr1_code,
-        "OCCSOC": occsoc,  # Occupation code
-        "IND": ind,        # Industry code
-        "WKSWORK1": wkswork1
-    }
+# Base input dictionary
+input_dict = {
+    "NCHILD": nchil,
+    "AGE": age,
+    "RACE": race_code,
+    "BPL": bpl_code,
+    "ANCESTR1": ancestr1_code,
+    "WKSWORK1": wkswork1,
+    "UHRSWORK": uhrswork,
+    "TRANTIME": trantime,
+    "SEX_Male": int(sex == "Male"),
+    'CLASSWKRD_Local govt employee': int(classwkrd == "Local govt employee"),
+    'CLASSWKRD_Self-employed, incorporated': int(classwkrd == "Self-employed, incorporated"),
+    'CLASSWKRD_Self-employed, not incorporated': int(classwkrd == "Self-employed, not incorporated"),
+    'CLASSWKRD_State govt employee': int(classwkrd == "State govt employee"),
+    'CLASSWKRD_Wage/salary at non-profit': int(classwkrd == "Wage/salary at non-profit"),
+    'CLASSWKRD_Wage/salary, private': int(classwkrd == "Wage/salary, private"),
+    'MARST_Married, spouse absent': int(marst == "Married, spouse absent"),
+    'MARST_Married, spouse present': int(marst == "Married, spouse present"),
+    'MARST_Never married/single': int(marst == "Never married/single"),
+    'MARST_Separated': int(marst == "Separated"),
+    'MARST_Widowed': int(marst == "Widowed"),
+    "STATEFIP": state_name,
+    "SPEAKENG_ENCODED": speakeng_code,
+    "EDUC_ENCODED": educ_code,
+    "OCCSOC": occsoc,  # Occupation code
+    "IND": ind,        # Industry code
+}
 
-    # 1. Create degree input DataFrame
-    degree_input_df = pd.DataFrame([{
-        'DEGFIELD': deg1,  # Replace deg1 with actual value
-        'DEGFIELD2': deg2  # Replace deg2 with actual value
-    }])
+# Create the input dataframe
+input_df = pd.DataFrame([input_dict])
 
-    # 2. Get multi-hot encoded degrees and wrap in DataFrame
-    degree_array = degree_encoder.transform(degree_input_df.values)
-    degree_features_df = pd.DataFrame(degree_array, columns=degree_encoder.classes_)
+# The list of feature columns in the exact order expected by the model (this matches your provided order)
+feature_order = [
+    'NCHILD', 'AGE', 'RACE', 'BPL', 'ANCESTR1', 'WKSWORK1', 'UHRSWORK', 'TRANTIME', 'SEX_Male', 
+    'CLASSWKRD_Local govt employee', 'CLASSWKRD_Self-employed, incorporated', 'CLASSWKRD_Self-employed, not incorporated', 
+    'CLASSWKRD_State govt employee', 'CLASSWKRD_Wage/salary at non-profit', 'CLASSWKRD_Wage/salary, private', 
+    'MARST_Married, spouse absent', 'MARST_Married, spouse present', 'MARST_Never married/single', 'MARST_Separated', 
+    'MARST_Widowed', 'nan', 'Theology and Religious Vocations', 'Linguistics and Foreign Languages', 
+    'Public Affairs, Policy, and Social Work', 'Engineering', 'Computer and Information Sciences', 'Mathematics and Statistics', 
+    'Environment and Natural Resources', 'Business', 'Psychology', 'Biology and Life Sciences', 
+    'Education Administration and Teaching', 'Physical Sciences', 'Medical and Health Sciences and Services', 
+    'Social Sciences', 'Engineering Technologies', 'Criminal Justice and Fire Protection', 'Family and Consumer Sciences', 
+    'Liberal Arts and Humanities', 'English Language, Literature, and Composition', 'Area, Ethnic, and Civilization Studies', 
+    'Interdisciplinary and Multi-Disciplinary Studies (General)', 'Physical Fitness, Parks, Recreation, and Leisure', 
+    'Communications', 'Fine Arts', 'History', 'Construction Services', 'Transportation Sciences and Technologies', 'Agriculture', 
+    'Philosophy and Religious Studies', 'Architecture', 'Communication Technologies', 'Cosmetology Services and Culinary Arts', 
+    'Law', 'Electrical and Mechanic Repairs and Technologies', 'Nuclear, Industrial Radiology, and Biological Technologies', 
+    'Library Science', 'Military Technologies', 'SPEAKENG_ENCODED', 'EDUC_ENCODED', 'OCCSOC', 'IND', 'STATEFIP'
+]
 
-    # 3. Base input DataFrame from form values (user inputs)
-    input_df = pd.DataFrame([input_dict])  # input_dict contains the user input values
+# Reorder the input DataFrame to match the feature order
+input_df = input_df[feature_order]
 
-    # 4. Merge base input with degree features
-    full_input = pd.concat([input_df.reset_index(drop=True),
-                            degree_features_df.reset_index(drop=True)], axis=1)
+# Apply Leave-One-Out Encoding (LOO) on the relevant columns if needed
+user_input_loo = input_df[feature_cols]  # Use the feature columns for LOO encoding
+user_input_non_loo = input_df.drop(columns=feature_cols)
 
-    # 5. Apply LOO encoding on specified columns
-    user_input_loo = full_input[feature_cols]
-    user_input_non_loo = full_input.drop(columns=feature_cols)
+# Transform LOO columns using the fitted encoder
+user_input_loo_encoded = loo_encoder.transform(user_input_loo)
 
-    # Transform LOO columns
-    user_input_loo_encoded = loo_encoder.transform(user_input_loo)
+# Recombine the transformed LOO columns with the non-LOO columns
+user_input_transformed = pd.concat([user_input_non_loo.reset_index(drop=True),
+                                    user_input_loo_encoded.reset_index(drop=True)], axis=1)
 
-    # Recombine the transformed LOO columns with the non-LOO columns
-    user_input_transformed = pd.concat([user_input_non_loo.reset_index(drop=True),
-                                        user_input_loo_encoded.reset_index(drop=True)], axis=1)
+# Ensure the columns match exactly with what the model expects
+user_input_transformed = user_input_transformed[model.feature_names_in_]
 
-    # 6. Predict income using the model (use transformed data)
-    predicted_income = model.predict(user_input_transformed)[0]  # Get the first prediction if it's a single value
-    lower = predicted_income - average_mae
-    upper = predicted_income + average_mae
+# Predict income using the trained model
+predicted_income = model.predict(user_input_transformed)[0]
 
-    # 7. Counterfactual gender toggle
-    opposite_input = user_input_transformed.copy()
-    if 'SEX_Male' in opposite_input.columns:
-        opposite_input['SEX_Male'] = 1 - opposite_input['SEX_Male']
-    opposite_income = model.predict(opposite_input)[0]
-    opp_lower = opposite_income - average_mae
-    opp_upper = opposite_income + average_mae
+# Calculate the income range based on the average MAE
+lower = predicted_income - average_mae
+upper = predicted_income + average_mae
 
-    # 8. Calculate percent difference
-    percent_diff = ((predicted_income - opposite_income) / opposite_income) * 100
+# Counterfactual analysis (opposite gender toggle)
+opposite_input = user_input_transformed.copy()
+if 'SEX_Male' in opposite_input.columns:
+    opposite_input['SEX_Male'] = 1 - opposite_input['SEX_Male']
+opposite_income = model.predict(opposite_input)[0]
+opp_lower = opposite_income - average_mae
+opp_upper = opposite_income + average_mae
 
-    # 9. Display results in Streamlit
-    st.subheader("Estimated Annual Income")
-    gender_label = "Male" if user_input_transformed['SEX_Male'].iloc[0] == 1 else "Female"
-    st.success(f"{gender_label}: ${predicted_income:,.0f} (±${average_mae:,.0f})")
-    st.write(f"**Range:** ${lower:,.0f} - ${upper:,.0f}")
+# Calculate the percent difference between the predicted income and the counterfactual
+percent_diff = ((predicted_income - opposite_income) / opposite_income) * 100
 
-    st.subheader("Counterfactual (Opposite Gender)")
-    opp_gender_label = "Female" if gender_label == "Male" else "Male"
-    st.info(f"{opp_gender_label}: ${opposite_income:,.0f} (±${average_mae:,.0f})")
-    st.write(f"**Range:** ${opp_lower:,.0f} - ${opp_upper:,.0f}")
+# Display results
+st.subheader("Estimated Annual Income")
+gender_label = "Male" if user_input_transformed['SEX_Male'].iloc[0] == 1 else "Female"
+st.success(f"{gender_label}: ${predicted_income:,.0f} (±${average_mae:,.0f})")
+st.write(f"**Range:** ${lower:,.0f} - ${upper:,.0f}")
 
-    st.markdown(f"**The predicted income is {abs(percent_diff):.1f}% {'higher' if percent_diff > 0 else 'lower'} than it would be if the person were {opp_gender_label}.**")
+st.subheader("Counterfactual (Opposite Gender)")
+opp_gender_label = "Female" if gender_label == "Male" else "Male"
+st.info(f"{opp_gender_label}: ${opposite_income:,.0f} (±${average_mae:,.0f})")
+st.write(f"**Range:** ${opp_lower:,.0f} - ${opp_upper:,.0f}")
+
+st.markdown(f"**The predicted income is {abs(percent_diff):.1f}% {'higher' if percent_diff > 0 else 'lower'} than it would be if the person were {opp_gender_label}.**")
