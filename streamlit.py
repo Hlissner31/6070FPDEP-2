@@ -303,7 +303,10 @@ if submitted:
     opp_lower = opposite_income - average_mae
     opp_upper = opposite_income + average_mae
 
-    # 12. Display results in Streamlit
+    # 12. Calculate percentage difference
+    percent_diff = ((predicted_income - opposite_income) / opposite_income) * 100
+
+    # 13. Display results in Streamlit
     st.subheader("Estimated Annual Income")
     gender_label = "Male" if final_input['SEX_Male'].iloc[0] == 1 else "Female"
     st.success(f"{gender_label}: ${predicted_income:,.0f} (±${average_mae:,.0f})")
@@ -314,3 +317,6 @@ if submitted:
     st.info(f"{opp_gender_label}: ${opposite_income:,.0f} (±${average_mae:,.0f})")
     st.write(f"**Range:** ${opp_lower:,.0f} - ${opp_upper:,.0f}")
 
+    # 14. Display % difference
+    diff_text = "higher" if percent_diff > 0 else "lower"
+    st.markdown(f"**The predicted income is {abs(percent_diff):.1f}% {diff_text} than it would be if the person were {opp_gender_label}.**")
