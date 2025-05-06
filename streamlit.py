@@ -24,7 +24,7 @@ state_name_to_fips = {
         "Vermont": 50, "Virginia": 51, "Washington": 53,
         "West Virginia": 54, "Wisconsin": 55, "Wyoming": 56
 }
-sex_map = {'Male': 1, 'Female': 0}
+sex_map = {'Male': 0, 'Female': 1}
 REGION_map = {
         'East South Central Div.': 1,
         'Pacific Division': 2,
@@ -166,7 +166,6 @@ with st.form("income_form"):
         sex = st.selectbox("Sex", list(sex_map.keys()))
         sexcode = sex_map[sex]  # Ensure mapping happens here
         state_name = st.selectbox("State", list(state_name_to_fips.keys()))
-        statefip = state_name_to_fips[state_name]  # Apply state mapping here
         marital_status = st.selectbox("Marital Status (MARST)", list(MARST_map.keys()))
         marital_status_code = MARST_map[marital_status]  # Apply marital status mapping here
         nchil = st.number_input("Number of Children", 0, 9, 0)
@@ -213,7 +212,7 @@ with st.form("income_form"):
         ind = industry_df[industry_df['Industry Name'] == selected_industry]['Industry Code'].values[0]
         occsoc = occupation_df[occupation_df['Occupation Name'] == selected_occupation]['Occupation Code'].values[0]
 
-        wkswork1 = st.number_input("Weeks Worked Last Year", 1, 52, 6)
+        wkswork1 = st.number_input("Weeks Worked Last Year", 1, 52, 48)
 
     submitted = st.form_submit_button("Predict Income")
 
@@ -221,8 +220,8 @@ if submitted:
     # Base input dictionary
     input_dict = {
         "AGE": age,
-        "SEX": sexcode,
-        "STATEFIP": statefip,
+        "SEX_Male": sexcode,
+        "STATEFIP": state_name,
         "MARST": marital_status_code,
         "NCHILD": nchil,
         "UHRSWORK": uhrswork,
