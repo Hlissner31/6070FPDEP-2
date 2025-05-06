@@ -271,7 +271,7 @@ input_dict = {
     "WKSWORK1": wkswork1,
     "UHRSWORK": uhrswork,
     "TRANTIME": trantime,
-    "SEX_Male": int(sex == "Male"),
+    "SEX_Male": int(sex == "Female"),  # CORRECT for model trained with Male=0
     'CLASSWKRD_Local govt employee': int(classwkrd == "Local govt employee"),
     'CLASSWKRD_Self-employed, incorporated': int(classwkrd == "Self-employed, incorporated"),
     'CLASSWKRD_Self-employed, not incorporated': int(classwkrd == "Self-employed, not incorporated"),
