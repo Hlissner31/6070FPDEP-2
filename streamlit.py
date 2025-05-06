@@ -178,7 +178,6 @@ with st.form("income_form"):
             "Separated", "Widowed"
 ])
         trantime = st.number_input("Transit Time (minutes)", 0, 999, 30)
-        transwork_code = TRANWORK_map[transwork]  # Ensure mapping happens here
         degree_choices = list(degree_to_manual_label.keys())
         selected_degrees = st.multiselect(
             "Select up to two Degree Fields",
